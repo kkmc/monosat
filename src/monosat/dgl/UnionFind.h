@@ -1,3 +1,6 @@
+#ifndef UNION_FIND
+#define UNION_FIND
+
 class UnionFind {
 public:
     int *id, cnt, *sz;
@@ -57,3 +60,5 @@ public:
         return cnt;
     }
 };
+
+#endif

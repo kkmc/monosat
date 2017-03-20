@@ -144,7 +144,7 @@ public:
 	// Recompute spanning forest for CC
 	void unmerge_components(int ns, int ne) {
 		// Reset seen
-		// ***************** use another method as sam mentioned
+		// ***************** use another method as sam mentioned for resetting
 		q.clear();
 		for (int i=0; i<g.nodes(); i++) {
 			seen[i] = false;
@@ -234,7 +234,7 @@ public:
 			}
 		}
 
-		printf("span[500]=%d, span[1000]=%d, span[1004]=%d\n", span[500], span[1000], span[1004]);
+		// printf("span[500]=%d, span[1000]=%d, span[1004]=%d\n", span[500], span[1000], span[1004]);
 	}
 
 
