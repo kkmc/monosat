@@ -140,7 +140,7 @@ public:
 	}
 
 	bool hasCycle() {
-		printf("FastCycle_v3::hasCycle()\n");
+		// printf("FastCycle_v3::hasCycle()\n");
 		resetSeenNodes();
 		resetSeenEdges();
 

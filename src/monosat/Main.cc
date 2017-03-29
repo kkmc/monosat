@@ -135,6 +135,8 @@ void selectAlgorithms(){
 		cyclealg = CycleAlg::ALG_DFS_CYCLE;
 	}else if (!strcasecmp(opt_cycle_alg, "pk")) {
 		cyclealg = CycleAlg::ALG_PK_CYCLE;
+	}else if (!strcasecmp(opt_cycle_alg, "fc")) {
+		cyclealg = CycleAlg::ALG_FC_CYCLE;
 	} else {
 		fprintf(stderr, "Error: unknown cycle detection algorithm %s, aborting\n",
 				((string) opt_cycle_alg).c_str());

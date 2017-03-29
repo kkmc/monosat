@@ -252,7 +252,8 @@ extern ComponentsAlg componentsalg;
 
 enum class CycleAlg {
 	ALG_DFS_CYCLE,
-	ALG_PK_CYCLE
+	ALG_PK_CYCLE,
+	ALG_FC_CYCLE
 };
 extern CycleAlg cyclealg;
 
