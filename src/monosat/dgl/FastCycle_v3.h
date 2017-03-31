@@ -87,6 +87,7 @@ public:
 	}
 
 	void setHasCycle() {
+		// printf("HAS A CYCLE!!\n");
 		has_undirected_cycle = has_undirected_cycle || true;
 		has_directed_cycle = has_directed_cycle || true;
 	}
@@ -109,6 +110,7 @@ public:
 		}
 		bad_edge_indices[edge_id] = bad_edges.size();
 		bad_edges.push_back(edge_id);
+		// printf("Adding bad edge %d\n", edge_id);
 	}
 
 	void resetSeenNodes() {
@@ -144,92 +146,43 @@ public:
 		resetSeenNodes();
 		resetSeenEdges();
 
-		for (int i=0; i<process_edge.size(); i++) {
-			if (process_edge[i] == 1) {
-				// Run DFS one end of the edge to check for a cycle
-				auto edge = g.getEdge(i);
-				if (!g.edgeEnabled(edge.id)) continue;
-				auto incident = g.incident(edge.to, 0, true);
-				int ne = edge.to;
-				int ns = edge.from;
-				visitNode(ne);
-				setCC(ne, ne);
-				visitNode(ns);
-				setCC(ns, ne);
-				// Add ne's children to q
-				for (int ni=0; ni<g.nIncident(ne, true); ni++) {
-					incident = g.incident(ne, ni, true);
+		int hsize = g.historySize();
+
+
+		for (int i=history_qhead; i<hsize; i++) {
+			auto edge = g.getEdge(g.getChange(i).id);
+			int ne = edge.to;
+			int ns = edge.from;
+			if (!g.edgeEnabled(edge.id) || seen_node[ne]) continue;
+			auto incident = g.incident(ne, 0, true);
+
+			visitNode(ne);
+			setCC(ne, ne);
+			q.push_back(ne);
+
+			while (q.size()) {
+				int n = q.back();
+				q.pop_back();
+				for (int ni = 0; ni<g.nIncident(n, true); ni++) {
+					incident = g.incident(n, ni, true);
 					if (!g.edgeEnabled(incident.id)) {
+						// if (seen_node[incident.node] && cc[incident.node] == ne) {
+							// addBadEdge(incident.id);
+						// }
 						continue;
+					}
+					if (seen_edge[incident.id]) continue;
+					if (seen_node[incident.node]) {
+						return true;
 					}
 					visitEdge(incident.id);
 					visitNode(incident.node);
 					setCC(incident.node, ne);
 					q.push_back(incident.node);
 				}
-				// DFS on ne's children
-				while (q.size()) {
-					int n = q.back();
-					q.pop_back();
-					for (int ni = 0; ni<g.nIncident(n, true); ni++) {
-						incident = g.incident(n, ni, true);
-						if (!g.edgeEnabled(incident.id)) {
-							if (seen_node[incident.node] && cc[incident.node] == ne) {
-								addBadEdge(incident.id);
-							}
-							continue;
-						}
-						if (seen_edge[incident.id]) continue;
-						if (seen_node[incident.node]) {
-							return true;
-						}
-						visitEdge(incident.id);
-						visitNode(incident.node);
-						setCC(incident.node, ne);
-						q.push_back(incident.node);
-					}
-				}
-				// DFS on ns
-				q.push_back(ns);
-				while (q.size()) {
-					int n = q.back();
-					q.pop_back();
-					for (int ni = 0; ni<g.nIncident(n, true); ni++) {
-						incident = g.incident(n, ni, true);
-						if (!g.edgeEnabled(incident.id)) {
-							if (seen_node[incident.node] && cc[incident.node] == ne) {
-								addBadEdge(incident.id);
-							}
-							continue;
-						}
-						if (seen_edge[incident.id]) continue;
-						if (seen_node[incident.node]) {
-							return true;
-						}
-						visitEdge(incident.id);
-						visitNode(incident.node);
-						setCC(incident.node, ne);
-						q.push_back(incident.node);
-					}
-				}
-			} else if (process_edge[i] == -1) {
-				// edge deletion
 			}
 		}
 		return false;
-	}
-
-	void processEdges() {
-		int hsize = g.historySize();
-		int edge_id;
-		auto edge = g.getChange(hsize-1);
-		
-		for (int i=history_qhead; i<hsize; i++) {
-			edge = g.getChange(i);
-			edge_id = edge.id;
-			if (edge.addition) process_edge[edge_id]++;
-			if (edge.deletion) process_edge[edge_id]--;
-		}
 	}
 
 public:
@@ -254,7 +207,6 @@ public:
 		has_undirected_cycle=false;
 		has_directed_cycle=false;
 
-		processEdges();
 		if (hasCycle()) {
 			setHasCycle();
 		}
