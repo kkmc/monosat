@@ -25,7 +25,7 @@ const int REMOVAL = 45;	// weight of batch being removal
 const int BATCH_TYPE_SPLIT = 90;	// portion of edge change being a particular kind
 const int BATCH_SIZE = 300;
 const int VARIATION = 100;
-const int NUM_BATCHES = 1;
+const int NUM_BATCHES = 5;
 
 
 void generateSpanningTree(DynamicGraph<int>& g, int n, Cycle*& cycle);
@@ -53,8 +53,33 @@ void printEdgeEndpts(DynamicGraph<int>& g, int edge_id) {
 	printf("ne: %d.\nns: %d.\n", ne, ns);
 }
 
+// Generates a static cycle
+void createST4(DynamicGraph<int>& g, int n, Cycle* cycle) {
+	printf("Creating ST(4)\n");
+
+	g.addNodes(n);
+	g.addEdge(1,2);
+	g.addEdge(2,3);
+	g.addEdge(3,4);
+	g.addEdge(3,5);
+	g.addEdge(4,1);
+	g.addEdge(5,1);
+	// g.disableEdge(4);
+	g.disableEdge(5);
+
+	// cycle->update();
+
+	// g.addEdge(4,5);
+	// g.addEdge(5,6);
+	// g.addEdge(6,7);
+	// g.addEdge(7,4);
+
+}
+
 // Generates a small fixed spanning tree
 void createST3(DynamicGraph<int>& g, int n, bool hasCycle) {
+	printf("Creating ST(3)\n");
+
 	g.addNodes(n);
 	g.addEdge(1,2);	// 0
 	g.addEdge(2,5);	// 1
@@ -70,7 +95,6 @@ void createST3(DynamicGraph<int>& g, int n, bool hasCycle) {
 
 	g.addEdge(4,6); // 8
 	g.addEdge(1,6); // 9
-	g.disableEdge(8);
 	g.disableEdge(9);
 }
 
@@ -116,19 +140,19 @@ void createST(DynamicGraph<int>& g, int n, bool hasCycle) {
 	}
 }
 
-void testAlgorithmOnStaticBatch(DynamicGraph<int>& g, int n, bool hasCycle) {
-	if (g.nodes() == 0) {
-		createST3(g, n, hasCycle);
-	}
+void testAlgorithmOnStaticBatch(DynamicGraph<int>& g, int n, bool hasCycle, Cycle* cycle) {
+	if (g.nodes() != 0) return;
 	if (hasCycle) {
-		insertCycle(g, 1, 4);
+		// insertCycle(g, 1, 4);
+		createST4(g, n, cycle);
+	} else {
+		createST3(g, n, hasCycle);
 	}
 }
 
-void testAlgorithmInBatches(DynamicGraph<int>& g, int n, bool hasCycle, Cycle*& cycle) {
+void testAlgorithmInBatches(DynamicGraph<int>& g, int n, bool hasCycle, Cycle* cycle1, Cycle* cycle2) {
 	if (g.nodes() == 0) {
 		createST(g, n, hasCycle);
-		cycle->update();
 	}
 	printf("Preparing batches\n");
 	vector<int> edgeType[2];	// types: 1 enabled, 0 disabled
@@ -183,8 +207,8 @@ void testAlgorithmInBatches(DynamicGraph<int>& g, int n, bool hasCycle, Cycle*& 
 
 	double duration;
 	clock_t start;
-	printf("Running batches with update()\n");
-	for (int i=0; i<1; i++) {	// Run with one batch for now
+	printf("Running batches with update()!!!\n");
+	for (int i=0; i<NUM_BATCHES; i++) {	// Run with one batch for now
 		int edge_id;
 		bool add;
 		for (int j=0; j<batches[i].size(); j++) {
@@ -196,14 +220,16 @@ void testAlgorithmInBatches(DynamicGraph<int>& g, int n, bool hasCycle, Cycle*& 
 				g.disableEdge(edge_id);
 			}
 		}
-		start = clock();
-		cycle->update();
-		duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
-		printf("Time elapsed for update() on batch[%d]: %f\n", i, duration);
+		// start = clock();
+		cycle1->update();
+		cycle2->update();
+		// duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
+		// printf("Time elapsed for update() on batch[%d]: %f\n", i, duration);
 	}
 }
 
 void timeHasUndirectedCycle(Cycle* cycle1, Cycle* cycle2) {
+	printf("timeHasUndirectedCycle(...)==============\n");
 	double duration;
 	clock_t start;
 
@@ -221,21 +247,26 @@ void timeHasUndirectedCycle(Cycle* cycle1, Cycle* cycle2) {
 int main(int argc, char* argv[]) {
 	int n = 1000;
 	bool hasCycle = false;
-	bool staticTest = false;
-	bool treeTest = true;
+	bool staticTest = true;
+	bool treeTest = false;
 	bool batchTest = false;
 
 	if (argc >= 2) n = atoi(argv[1]);
 	if (argc >= 3) hasCycle = atoi(argv[2]);
-	
+	if (argc == 6) {
+		staticTest = atoi(argv[3]);
+		treeTest = atoi(argv[4]);
+		batchTest = atoi(argv[5]);
+	}
+
 	srand(time(NULL));
 
 	if (staticTest) {
 		printf("================= Static test =================\n");
 		DynamicGraph<int> gS;
-		Cycle* fastCycleS = new FastCycle_v3<int,false,true>(gS, false, 1);
-		Cycle* dfsCycleS = new DFSCycle<int,false,true>(gS, false, 1);
-		testAlgorithmOnStaticBatch(gS, n, hasCycle);
+		Cycle* fastCycleS = new FastCycle_v3<int,true,true>(gS, false, 1);
+		Cycle* dfsCycleS = new DFSCycle<int, false, true>(gS, false, 1);
+		testAlgorithmOnStaticBatch(gS, n, hasCycle, dfsCycleS);
 		timeHasUndirectedCycle(fastCycleS, dfsCycleS);
 	}
 
@@ -243,7 +274,7 @@ int main(int argc, char* argv[]) {
 		printf("================= Tree test =================\n");
 		DynamicGraph<int> gT;
 		createST2(gT, n, hasCycle);
-		Cycle* fastCycleT = new FastCycle_v3<int,false,true>(gT, false, 1);
+		Cycle* fastCycleT = new FastCycle_v3<int,true,true>(gT, false, 1);
 		Cycle* dfsCycleT = new DFSCycle<int,false,true>(gT, false, 1);
 		timeHasUndirectedCycle(fastCycleT, dfsCycleT);
 	}
@@ -252,8 +283,9 @@ int main(int argc, char* argv[]) {
 		printf("================= Batch test =================\n");
 		DynamicGraph<int> gB;
 		createST3(gB, n, hasCycle);
-		Cycle* fastCycleB = new FastCycle_v3<int,false,true>(gB, false, 1);
+		Cycle* fastCycleB = new FastCycle_v3<int,true,true>(gB, false, 1);
 		Cycle* dfsCycleB = new DFSCycle<int,false,true>(gB, false, 1);
-		// todo
+		testAlgorithmInBatches(gB, n, hasCycle, fastCycleB, dfsCycleB);
+		timeHasUndirectedCycle(fastCycleB, dfsCycleB);
 	}
 }

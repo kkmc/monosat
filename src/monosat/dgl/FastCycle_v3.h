@@ -148,12 +148,10 @@ public:
 
 		int hsize = g.historySize();
 
-
 		for (int i=history_qhead; i<hsize; i++) {
 			auto edge = g.getEdge(g.getChange(i).id);
 			int ne = edge.to;
-			int ns = edge.from;
-			if (!g.edgeEnabled(edge.id) || seen_node[ne]) continue;
+			if (!g.hasEdge(edge.id) || !g.edgeEnabled(edge.id) || seen_node[ne]) continue;
 			auto incident = g.incident(ne, 0, true);
 
 			visitNode(ne);
@@ -165,7 +163,7 @@ public:
 				q.pop_back();
 				for (int ni = 0; ni<g.nIncident(n, true); ni++) {
 					incident = g.incident(n, ni, true);
-					if (!g.edgeEnabled(incident.id)) {
+					if (!g.hasEdge(incident.id) || !g.edgeEnabled(incident.id)) {
 						// if (seen_node[incident.node] && cc[incident.node] == ne) {
 							// addBadEdge(incident.id);
 						// }
