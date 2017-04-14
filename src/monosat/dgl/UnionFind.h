@@ -1,3 +1,5 @@
+// Credit: https://kartikkukreja.wordpress.com/2013/05/07/union-find-disjoint-set-data-structure-c-implementation/
+
 #ifndef UNION_FIND
 #define UNION_FIND
 

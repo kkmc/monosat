@@ -46,12 +46,14 @@ CycleDetector<Weight>::CycleDetector(int _detectorID, GraphTheorySolver<Weight> 
 
 		underapprox_undirected_cycle_detector = new DFSCycle<Weight,false,true>(g_under, false, 1);
 		overapprox_undirected_cycle_detector = new DFSCycle<Weight,false,true>(g_over, false, 1);
+
 	}else if(cyclealg==CycleAlg::ALG_FC_CYCLE){
 		underapprox_directed_cycle_detector = new FastCycle_v3<Weight,true,true>(g_under, false, 1);
 		overapprox_directed_cycle_detector = new FastCycle_v3<Weight,true,true>(g_over,  false, 1);
 
 		overapprox_undirected_cycle_detector=overapprox_directed_cycle_detector;
 		underapprox_undirected_cycle_detector=underapprox_directed_cycle_detector;
+
 	}
 	directed_cycle_marker = outer->newReasonMarker(getID());
 	no_directed_cycle_marker = outer->newReasonMarker(getID());

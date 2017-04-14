@@ -1,0 +1,15 @@
+-33 30 0
+-33 31 0
+-34 32 0
+-34 33 0
+34 0
+digraph 9 29 0
+edge 0 0 8 1
+edge 0 3 7 13
+edge 0 4 0 14
+edge 0 4 2 15
+edge 0 4 3 16
+edge 0 8 4 27
+reach 0 0 8 31
+reach 0 8 0 32
+acyclic 0 30

@@ -1,0 +1,5 @@
+digraph 4 12 8
+edge 8 0 3 93
+edge 8 1 0 94
+edge 8 3 1 101
+acyclic 8 103

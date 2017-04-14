@@ -1,0 +1,26 @@
+c Created with monosat_py
+p cnf 11 16
+-7 1 0
+-7 2 0
+7 -1 -2 0
+-8 3 0
+-8 7 0
+8 -3 -7 0
+-9 4 0
+-9 8 0
+9 -4 -8 0
+-10 5 0
+-10 9 0
+10 -5 -9 0
+-11 6 0
+-11 10 0
+11 -6 -10 0
+11 0
+digraph 4 5 0
+edge 0 0 1 1
+edge 0 0 2 2
+edge 0 1 2 3
+edge 0 1 3 4
+edge 0 2 3 5
+acyclic 0 6
+c var 6 acyclic(0)

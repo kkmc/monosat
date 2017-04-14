@@ -34,7 +34,7 @@ NOTES:	core/Config.h has been commented out for stand alone testing / manipulati
 #include <string.h>
 #include <time.h>
 #include "DynamicGraph.h"
-// #include "core/Config.h"
+#include "monosat/core/Config.h"
 #include "Cycle.h"
 namespace dgl {
 template <typename Weight, bool directed=true, bool undirected=false>
