@@ -31,6 +31,13 @@
 
 #include "monosat/utils/System.h"
 #include "Detector.h"
+
+//make sure to comment this out in production;
+//as this debug code will be very slow.
+#define DEBUG_CYCLES
+
+
+
 using namespace dgl;
 namespace Monosat {
 template<typename Weight>
@@ -53,6 +60,12 @@ public:
 	Cycle * overapprox_directed_cycle_detector=nullptr;
 	Cycle * underapprox_undirected_cycle_detector=nullptr;
 	Cycle * overapprox_undirected_cycle_detector=nullptr;
+
+#ifdef DEBUG_CYCLES
+	Cycle * DEBUG_underapprox_undirected_cycle_detector=nullptr;
+	Cycle * DEBUG_overapprox_undirected_cycle_detector=nullptr;
+#endif
+
 	//Reach *  positive_path_detector;
 	
 	//vec<Lit>  reach_lits;

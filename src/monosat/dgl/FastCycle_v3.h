@@ -202,7 +202,7 @@ public:
 			init();
 		}
 
-		has_undirected_cycle=false;
+		has_undirected_cycle=false;//TODO: What if there was a cycle after the previous call to update()
 		has_directed_cycle=false;
 
 		if (hasCycle()) {

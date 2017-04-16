@@ -22,6 +22,8 @@
 #include "GraphTheory.h"
 #include "monosat/dgl/PKTopologicalSort.h"
 #include "monosat/dgl/FastCycle_v3.h"
+
+
 using namespace Monosat;
 template<typename Weight>
 CycleDetector<Weight>::CycleDetector(int _detectorID, GraphTheorySolver<Weight> * _outer, DynamicGraph<Weight>  &g_under,
@@ -48,11 +50,15 @@ CycleDetector<Weight>::CycleDetector(int _detectorID, GraphTheorySolver<Weight> 
 		overapprox_undirected_cycle_detector = new DFSCycle<Weight,false,true>(g_over, false, 1);
 
 	}else if(cyclealg==CycleAlg::ALG_FC_CYCLE){
-		underapprox_directed_cycle_detector = new FastCycle_v3<Weight,true,true>(g_under, false, 1);
-		overapprox_directed_cycle_detector = new FastCycle_v3<Weight,true,true>(g_over,  false, 1);
-
-		overapprox_undirected_cycle_detector=overapprox_directed_cycle_detector;
-		underapprox_undirected_cycle_detector=underapprox_directed_cycle_detector;
+        //
+		underapprox_directed_cycle_detector = new PKToplogicalSort<Weight>(g_under,  1);
+		overapprox_directed_cycle_detector= new PKToplogicalSort<Weight>(g_over,  1);
+        //FastCycle cannot be used for detecting directed cycles (can it?).
+        //Only use it for undirected cycles, while falling back on PKSort for directed cycles.
+        //Really, there should be separate command line options to control the directed/undirected cycle detection algs.
+        //But I can fix that later.
+		overapprox_undirected_cycle_detector = new FastCycle_v3<Weight,true,true>(g_over, false, 1);
+		underapprox_undirected_cycle_detector = new FastCycle_v3<Weight,true,true>(g_under,  false, 1);
 
 	}
 	directed_cycle_marker = outer->newReasonMarker(getID());
@@ -61,6 +67,13 @@ CycleDetector<Weight>::CycleDetector(int _detectorID, GraphTheorySolver<Weight> 
 	undirected_cycle_marker = outer->newReasonMarker(getID());
 	no_undirected_cycle_marker = outer->newReasonMarker(getID());
 	//forced_reach_marker=outer->newReasonMarker(getID());
+
+
+#ifdef DEBUG_CYCLES
+    DEBUG_underapprox_undirected_cycle_detector=new DFSCycle<Weight,false,true>(g_under, false, 1);
+    DEBUG_overapprox_undirected_cycle_detector= new DFSCycle<Weight,false,true>(g_over, false, 1);
+#endif
+
 }
 template<typename Weight>
 void CycleDetector<Weight>::addAcyclicLit(bool directed, Var outer_reach_var) {
@@ -178,10 +191,14 @@ void CycleDetector<Weight>::buildReason(Lit p, vec<Lit> & reason, CRef marker) {
 template<typename Weight>
 bool CycleDetector<Weight>::propagate(vec<Lit> & conflict) {
 	static int it = 0;
-/*	if(++it==687){
+
+	if(++it==35){
+#ifndef NDEBUG
 		g_under.drawFull();
+        g_over.drawFull();
 		int a=1;
-	}*/
+#endif
+	}
 
 	double startdreachtime = rtime(2);
 	if(directed_acyclic_lit != lit_Undef && outer->value(directed_acyclic_lit)==l_True && outer->level(var(directed_acyclic_lit))==0){
@@ -222,8 +239,12 @@ bool CycleDetector<Weight>::propagate(vec<Lit> & conflict) {
 			}
 		}
 		
-	} else if (undirected_acyclic_lit != lit_Undef) {
-		
+	}
+
+    if (undirected_acyclic_lit != lit_Undef) {
+
+        assert(underapprox_undirected_cycle_detector->hasUndirectedCycle() == DEBUG_underapprox_undirected_cycle_detector->hasUndirectedCycle());
+        assert(overapprox_undirected_cycle_detector->hasUndirectedCycle() == DEBUG_overapprox_undirected_cycle_detector->hasUndirectedCycle());
 		if (outer->value(undirected_acyclic_lit) !=l_False && underapprox_undirected_cycle_detector->hasUndirectedCycle()) {
 
 			Lit l = ~directed_acyclic_lit;

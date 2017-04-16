@@ -33,6 +33,7 @@ template <typename Weight,bool directed=true, bool undirected=false>
 class DFSCycle: public Cycle {
 public:
 
+
 	DynamicGraph<Weight> & g;
 
 	int last_modification=0;
@@ -149,8 +150,18 @@ public:
 							directed_cycle.clear();
 							directed_cycle.push_back(id);
 							assert(path.size() == q.size() - 1);
-							for (int j = 1; j < q.size(); j++) {
-								if (seen[j]) {
+							//find the to node in the q
+							bool found=false;
+							int start = 0;
+							for(start =0;start<q.size();start++){
+								if(q[start]==v){
+									found=true;
+									break;
+								}
+							}
+							assert(found);
+							for (int j = start+ 1; j < q.size(); j++) {
+								if (seen[q[j]]) {
 									directed_cycle.push_back(path[j - 1]);
 								}
 							}
@@ -216,8 +227,18 @@ public:
 							//a directed cycle is also an undirected cycle.
 							has_undirected_cycle=true;
 							assert(path.size() == q.size() - 1);
-							for (int j = 1; j < q.size(); j++) {
-								if (seen[j]) {
+							bool found=false;
+							int start = 0;
+							for(start =0;start<q.size();start++){
+								if(q[start]==v){
+									found=true;
+									break;
+								}
+							}
+							assert(found);
+
+							for (int j = start+1; j < q.size(); j++) {
+								if (seen[q[j]]) {
 									undirected_cycle.push_back(path[j - 1]);
 								}
 							}
@@ -254,8 +275,8 @@ public:
 		}
 		has_undirected_cycle=false;
 		has_directed_cycle=false;
-		directed_cycle.clear();
-		undirected_cycle.clear();
+
+
 		stats_full_updates++;
 
 		computeCycles();
