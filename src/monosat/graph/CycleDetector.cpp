@@ -139,7 +139,8 @@ void CycleDetector<Weight>::buildUndirectedCycleReason(vec<Lit> & conflict) {
 	assert(underapprox_undirected_cycle_detector->hasUndirectedCycle());
 	
 	std::vector<int> & cycle = underapprox_undirected_cycle_detector->getUndirectedCycle();
-	for (int i = 0; i < cycle.size(); i++) {
+	assert(cycle.size()>=1);
+    for (int i = 0; i < cycle.size(); i++) {
 		int edgeID = cycle[i];
 		Lit l = mkLit(outer->getEdgeVar(edgeID), false);
 		assert(outer->value(l)==l_True);
@@ -152,7 +153,7 @@ void CycleDetector<Weight>::buildDirectedCycleReason(vec<Lit> & conflict) {
 	assert(underapprox_directed_cycle_detector->hasDirectedCycle());
 	
 	std::vector<int> & cycle = underapprox_directed_cycle_detector->getDirectedCycle();
-
+    assert(cycle.size()>=1);
 	for (int i = 0; i < cycle.size(); i++) {
 		int edgeID = cycle[i];
 		Lit l = mkLit(outer->getEdgeVar(edgeID), false);
@@ -247,7 +248,7 @@ bool CycleDetector<Weight>::propagate(vec<Lit> & conflict) {
         assert(overapprox_undirected_cycle_detector->hasUndirectedCycle() == DEBUG_overapprox_undirected_cycle_detector->hasUndirectedCycle());
 		if (outer->value(undirected_acyclic_lit) !=l_False && underapprox_undirected_cycle_detector->hasUndirectedCycle()) {
 
-			Lit l = ~directed_acyclic_lit;
+			Lit l = ~undirected_acyclic_lit;
 			
 			if (outer->value(l) == l_True) {
 				//do nothing
