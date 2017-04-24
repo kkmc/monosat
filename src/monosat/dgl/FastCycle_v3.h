@@ -53,19 +53,23 @@ public:
 
 	std::vector<int> q;
 
-	std::vector<int> bad_edges;
-	std::vector<int> bad_edge_indices;
+	// std::vector<int> bad_edges;
+	// std::vector<int> bad_edge_indices;
 
 	const int reportPolarity;
 
-	std::vector<char> seen_node;
+	std::vector<int> seen_node;
 	std::vector<int> seen_node_indices;
+	std::vector<int> path;
 	std::vector<char> seen_edge;
 	std::vector<int> seen_edge_indices;
 	std::vector<int> cc;	// connected component
 
 	std::vector<int> cycle_reps;	// representative nodes of the cycles
 	std::vector<int> cycle_reps_indices;
+
+	std::vector<int> cycle;
+	int cycle_ne, cycle_ns;
 
 	bool has_undirected_cycle=false;
 	bool has_directed_cycle=false;
@@ -77,10 +81,14 @@ public:
 		int m = g.edges();
 		INF = n + 1;
 		q.reserve(n);
-		bad_edge_indices.resize(m);
-		std::fill(bad_edge_indices.begin(), bad_edge_indices.end(), -1);
+
+		// bad_edges.reserve(m);
+		// bad_edge_indices.resize(m);
+
 		seen_node.resize(n);
 		seen_node_indices.reserve(n);
+		std::fill(seen_node.begin(), seen_node.end(), -1);
+		path.resize(n);
 		seen_edge.resize(m);
 		seen_edge_indices.reserve(m);
 		cc.resize(n);
@@ -88,10 +96,11 @@ public:
 		cycle_reps.reserve(n);
 		cycle_reps_indices.resize(n);
 		std::fill(cycle_reps_indices.begin(), cycle_reps_indices.end(), -1);
+
+		cycle.reserve(n);
 	}
 
 	void setHasCycle() {
-		// printf("HAS A CYCLE!!\n");
 		has_undirected_cycle = true;
 		has_directed_cycle = true;
 	}
@@ -103,10 +112,7 @@ public:
 
 	void removeCycleRep(int node) {
 		int index = cycle_reps_indices[node];
-		if (index < 0) {
-			// printf("Error calling removeCycleRep(int %d)\n", node);
-			return;
-		}
+		// assert(index >= 0);
 		cycle_reps[index] = cycle_reps.back();
 		cycle_reps_indices[cycle_reps.back()] = index;
 		cycle_reps.pop_back();
@@ -114,38 +120,30 @@ public:
 	}
 
 	void addCycleRep(int node) {
-		if (cycle_reps_indices[node] != -1) {
-			// printf("Error calling addCycleRep(int %d)\n", node);
-			return;
-		}
+		// assert(cycle_reps_indices[node] == -1);
 		cycle_reps_indices[node] = cycle_reps.size();
 		cycle_reps.push_back(node);
 	}
 
-	// UNTESTED
-	void removeBadEdge(int edge_id) {
-		int index = bad_edge_indices[edge_id];
-		if (index < 0) {
-			return;
-		}
-		bad_edges[index] = bad_edges.back();
-		bad_edge_indices[bad_edges.back()] = index;
-		bad_edges.pop_back();
-		bad_edge_indices[edge_id] = -1;
-	}
+	// // Bad Edges removal and addition methods are untested but are similar to cycle rep DS
+	// void removeBadEdge(int edge_id) {
+	// 	int index = bad_edge_indices[edge_id];
+	// 	// assert(index >= 0);
+	// 	bad_edges[index] = bad_edges.back();
+	// 	bad_edge_indices[bad_edges.back()] = index;
+	// 	bad_edges.pop_back();
+	// 	bad_edge_indices[edge_id] = -1;
+	// }
 
-	void addBadEdge(int edge_id) {
-		if (bad_edge_indices[edge_id] != -1) {
-			return;
-		}
-		bad_edge_indices[edge_id] = bad_edges.size();
-		bad_edges.push_back(edge_id);
-		// printf("Adding bad edge %d\n", edge_id);
-	}
+	// void addBadEdge(int edge_id) {
+	// 	// assert(bad_edge_indices[edge_id] == -1);
+	// 	bad_edge_indices[edge_id] = bad_edges.size();
+	// 	bad_edges.push_back(edge_id);
+	// }
 
 	void resetSeenNodes() {
 		for (int i=0; i<seen_node_indices.size(); i++) {
-			seen_node[seen_node_indices[i]] = false;
+			seen_node[seen_node_indices[i]] = -1;
 		}
 		seen_node_indices.clear();
 	}
@@ -157,8 +155,9 @@ public:
 		seen_edge_indices.clear();
 	}
 
-	void visitNode(int n) {
-		seen_node[n] = true;
+	void visitNode(int n, int prev) {
+		// assert(seen_node[n] == -1);
+		seen_node[n] = prev;
 		seen_node_indices.push_back(n);
 	}
 
@@ -171,41 +170,119 @@ public:
 		seen_edge_indices.push_back(id);
 	}
 
-	void DFS(int node, int ne, int add_bad_edges) {
-		auto incident = g.incident(ne, 0, true);
+	void constructCycle(int ne, int ns, int incident_edge) {
+		cycle.clear();
+		cycle.push_back(incident_edge);
 
-		visitNode(node);
-		setCC(node, ne);
+		int edge;
+		int tmp;
+
+		// height of ne
+		tmp = ne;
+		int hne = 0;
+		while (tmp >= 0) {
+			hne++;
+			tmp = seen_node[tmp]; 
+		}
+		// height of ns
+		tmp = ns;
+		int hns = 0;
+		while (tmp >= 0) {
+			hns++;
+			tmp = seen_node[tmp];
+		}
+		// create cycle based on heights
+		int longer = ns, shorter = ne;
+		int diff = hns - hne;
+		if (hns < hne) {
+			diff = hne - hns;
+			longer = ne; shorter = ns;
+		}
+		while (diff--) {
+			cycle.push_back(path[longer]);
+			longer = seen_node[longer];
+		}
+		while (longer != shorter) {
+			cycle.push_back(path[longer]);
+			cycle.push_back(path[shorter]);
+			longer = seen_node[longer];
+			shorter = seen_node[shorter];
+		}
+		// for (int i=0; i<cycle.size(); i++) {
+		// 	assert(g.edgeEnabled(cycle[i]));
+		// }
+	}
+
+	void updateCycle() {
+		if (cycle_reps.size()) {
+			int ne = cycle_reps.back();
+			auto incident = g.incident(ne, 0, true);
+
+			resetSeenNodes();
+			resetSeenEdges();
+			
+			// use the first cycle in cycle_reps
+			q.clear();
+			q.push_back(ne);
+			visitNode(ne, -2);
+			while (q.size()) {
+				int n = q.back();
+				q.pop_back();
+
+				for (int ni=0; ni<g.nIncident(n, true); ni++) {
+					incident = g.incident(n, ni, true);
+					if (!g.hasEdge(incident.id) || !g.edgeEnabled(incident.id) || seen_edge[incident.id]) continue;
+					if (seen_node[incident.node] != -1) {
+						constructCycle(n, incident.node, incident.id);
+						return;
+					}
+					path[incident.node] = incident.id;
+					visitEdge(incident.id);
+					visitNode(incident.node, n);
+					q.push_back(incident.node);
+				}
+			}
+		}
+		// found no cycle
+		// assert(false);
+	}
+
+	void DFS(int node, int ne, bool add_bad_edges) {
+		auto incident = g.incident(ne, 0, true);
+		
+		q.clear();
 		q.push_back(node);
+		visitNode(node, -2);
+		// setCC(node, ne);
 
 		while (q.size()) {
 			int n = q.back();
 			q.pop_back();
 
-			if (cycle_reps_indices[n] > -1) {
+			if (cycle_reps_indices[n] != -1) {
 				removeCycleRep(n);
 			}
 
 			for (int ni = 0; ni<g.nIncident(n, true); ni++) {
 				incident = g.incident(n, ni, true);
+
 				if (!g.hasEdge(incident.id) || !g.edgeEnabled(incident.id)) {
-					// if (add_bad_edges && seen_node[incident.node] && cc[incident.node] == ne) {
+					// if (add_bad_edges && seen_node[incident.node] != -1 && cc[incident.node] == ne) {
 						// addBadEdge(incident.id);
 					// }
 					continue;
 				}
+
 				if (seen_edge[incident.id]) continue;
-				if (seen_node[incident.node]) {
-					// Add cycle representative per component
+				if (seen_node[incident.node] != -1) {
 					addCycleRep(n);
 					q.clear();
-					break;
-					// return true;
+					return;
 				}
 				visitEdge(incident.id);
-				visitNode(incident.node);
-				setCC(incident.node, ne);
+				visitNode(incident.node, n);
 				q.push_back(incident.node);
+				// setCC(incident.node, ne);
 			}
 		}
 	}
@@ -216,6 +293,7 @@ public:
 
 		int hsize = g.historySize();
 
+		// a chunk of these edge, ne, ns variables should be inside DFS
 		for (int i=history_qhead; i<hsize; i++) {
 			auto edge = g.getEdge(g.getChange(i).id);
 			int ne = edge.to;
@@ -226,18 +304,17 @@ public:
 				addition = false;
 			}
 
-			if (!seen_node[ne]) {
+			if (seen_node[ne] == -1) {
 				DFS(ne, ne, addition);
 			}
-			if (!addition && !seen_node[ns]) {
+			if (!addition && seen_node[ns] == -1) {
 				DFS(ns, ne, false);
 			}
 
 		}
-		// return false;
 	}
 
-public:
+public:	
 
 	FastCycle_v3(DynamicGraph<Weight>& graph, bool _directed = true, int _reportPolarity = 0) :
 			g(graph),  last_modification(-1), last_addition(-1), last_deletion(-1),
@@ -262,6 +339,7 @@ public:
 			setHasCycle();
 		} else {
 			resetHasCycle();
+			cycle.clear();
 		}
 
 		last_modification = g.modifications;
@@ -284,12 +362,13 @@ public:
 
 	std::vector<int>& getUndirectedCycle() {
 		update();
-		return undirected_cycle;
+		updateCycle();
+		return cycle;
 	}
 
 	std::vector<int>& getDirectedCycle() {
 		update();
-		return directed_cycle;
+		return cycle;
 	}
 
 };
