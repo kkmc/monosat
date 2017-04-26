@@ -64,6 +64,7 @@ public:
 	std::vector<char> seen_edge;
 	std::vector<int> seen_edge_indices;
 	std::vector<int> cc;	// connected component
+	std::vector<char> cc_has_cycle;
 
 	std::vector<int> cycle_reps;	// representative nodes of the cycles
 	std::vector<int> cycle_reps_indices;
@@ -92,6 +93,7 @@ public:
 		seen_edge.resize(m);
 		seen_edge_indices.reserve(m);
 		cc.resize(n);
+		cc_has_cycle.resize(n);
 
 		cycle_reps.reserve(n);
 		cycle_reps_indices.resize(n);
@@ -247,13 +249,17 @@ public:
 		// assert(false);
 	}
 
-	void DFS(int node, int ne, bool add_bad_edges) {
+	void DFS(int node, int ne, bool addition) {
 		auto incident = g.incident(ne, 0, true);
 		
+		int component = (addition)? ne : node;
+
 		q.clear();
 		q.push_back(node);
 		visitNode(node, -2);
-		// setCC(node, ne);
+		setCC(node, component);
+
+		cc_has_cycle[cc[node]] = false;
 
 		while (q.size()) {
 			int n = q.back();
@@ -267,7 +273,7 @@ public:
 				incident = g.incident(n, ni, true);
 
 				if (!g.hasEdge(incident.id) || !g.edgeEnabled(incident.id)) {
-					// if (add_bad_edges && seen_node[incident.node] != -1 && cc[incident.node] == ne) {
+					// if (addition && seen_node[incident.node] != -1 && cc[incident.node] == ne) {
 						// addBadEdge(incident.id);
 					// }
 					continue;
@@ -276,13 +282,14 @@ public:
 				if (seen_edge[incident.id]) continue;
 				if (seen_node[incident.node] != -1) {
 					addCycleRep(n);
+					cc_has_cycle[component] = true;
 					q.clear();
 					return;
 				}
 				visitEdge(incident.id);
 				visitNode(incident.node, n);
 				q.push_back(incident.node);
-				// setCC(incident.node, ne);
+				setCC(incident.node, component);
 			}
 		}
 	}
@@ -304,11 +311,16 @@ public:
 				addition = false;
 			}
 
+			// removing an edge from an acyclic component is still acyclic
+			if (!addition && !cc_has_cycle[cc[ne]]) {
+				continue;
+			}
+
 			if (seen_node[ne] == -1) {
 				DFS(ne, ne, addition);
 			}
 			if (!addition && seen_node[ns] == -1) {
-				DFS(ns, ne, false);
+				DFS(ns, ne, addition);
 			}
 
 		}
