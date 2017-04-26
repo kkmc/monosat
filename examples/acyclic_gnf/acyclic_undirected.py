@@ -137,6 +137,8 @@ for e in all_edges:
     e2 = edge_map[e]
     AssertXor(e,e2) #Every edge is either in the first graph, or the second, but not in both
 
+# Assert(Not(g1.acyclic(False)))
+# Assert(Not(g2.acyclic(False)))
 Assert(g1.acyclic(False))
 Assert(g2.acyclic(False))
 
